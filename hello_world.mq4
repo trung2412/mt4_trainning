@@ -31,7 +31,10 @@ void OnDeinit(const int reason)
 void OnTick()
   {
 //---
-   Print("OnTick");
-   
+   Print("OnTick Bid ", Bid, " Ask", Ask);
+   Print("Open0: ", iOpen(NULL,60,0));
+   Print("Close0: ", iOpen(NULL,60,0));
+   Print("Open1: ", iOpen(NULL,60,1));
+   Print("Close1: ", iOpen(NULL,60,1));
   }
 //+------------------------------------------------------------------+
