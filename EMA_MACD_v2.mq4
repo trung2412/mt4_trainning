@@ -10,6 +10,10 @@
 #define MAGICMA  99
 input int TP;
 
+input bool IsFixedSL = false;
+input int Fiexed_SL;
+input int ShifCheck=0;
+
 double   ema5; 
 double   ema5a; 
 double   ema15;
@@ -42,21 +46,34 @@ int CalculateCurrentOrders(string symbol)
 void CheckForOpen()   
    {  
       int      order;
-      double SL = ema50;   
       
-      macd   = iMACD (Symbol(),Period(), 12, 26, 9, PRICE_CLOSE, MODE_MAIN, 0);
-      ema5   = iMA(Symbol(),Period(),5,0,MODE_EMA,PRICE_CLOSE,0);
-      ema15  = iMA(Symbol(),Period(),15,0,MODE_EMA,PRICE_CLOSE,0);
-      ema50  = iMA(Symbol(),Period(),50,0,MODE_EMA,PRICE_CLOSE,0);
-      ema100 = iMA(Symbol(),Period(),100,0,MODE_EMA,PRICE_CLOSE,0);
+      
+      macd   = iMACD (Symbol(),Period(), 12, 26, 9, PRICE_CLOSE, MODE_MAIN, ShifCheck);
+      ema5   = iMA(Symbol(),Period(),5,0,MODE_EMA,PRICE_CLOSE,ShifCheck);
+      ema15  = iMA(Symbol(),Period(),15,0,MODE_EMA,PRICE_CLOSE,ShifCheck);
+      ema50  = iMA(Symbol(),Period(),50,0,MODE_EMA,PRICE_CLOSE,ShifCheck);
+      ema100 = iMA(Symbol(),Period(),100,0,MODE_EMA,PRICE_CLOSE,ShifCheck);
+      
+      double SL = ema50;   
       
       if(ema5<ema15 && macd<0 && Bid<ema50 && Bid<ema100)
         {
+            //order = OrderSend(Symbol(),OP_SELL,0.1,Bid,5,SL,Bid - TP*Point,"",MAGICMA,0,Red);
+            
+            if(IsFixedSL)
+            {
+               SL = Ask + Fiexed_SL*Point;
+            }
             order = OrderSend(Symbol(),OP_SELL,0.1,Bid,5,SL,Bid - TP*Point,"",MAGICMA,0,Red);
             return;
         } 
       if(ema5>ema15 && macd>0 && Bid>ema50 && Bid>ema100)
         {
+            if(IsFixedSL)
+            {
+               SL = Ask - Fiexed_SL*Point;
+            }
+            
             order = OrderSend(Symbol(),OP_BUY,0.1,Ask,5,SL,Ask + TP*Point,"",MAGICMA,0,Green);
             return;
         }
@@ -64,9 +81,9 @@ void CheckForOpen()
 
 void CheckForClose()
   {
-  macd   = iMACD (Symbol(),Period(), 12, 26, 9, PRICE_CLOSE, MODE_MAIN, 0);
-  ema5   = iMA(Symbol(),Period(),5,0,MODE_EMA,PRICE_CLOSE,0);
-  ema15  = iMA(Symbol(),Period(),15,0,MODE_EMA,PRICE_CLOSE,0);
+  macd   = iMACD (Symbol(),Period(), 12, 26, 9, PRICE_CLOSE, MODE_MAIN, ShifCheck);
+  ema5   = iMA(Symbol(),Period(),5,0,MODE_EMA,PRICE_CLOSE,ShifCheck);
+  ema15  = iMA(Symbol(),Period(),15,0,MODE_EMA,PRICE_CLOSE,ShifCheck);
   for(int i=0;i<OrdersTotal();i++)
      {
       if(OrderSelect(i,SELECT_BY_POS,MODE_TRADES)==false) break;
@@ -75,7 +92,7 @@ void CheckForClose()
       
       if(OrderType()==OP_BUY)
         {
-         if(ema5<ema15 && macd<0)
+         if( ema5<ema15 || macd<0)
            {
             if(!OrderClose(OrderTicket(),0.1,Bid,5,White))
                Print("OrderClose error ",GetLastError());
@@ -83,7 +100,7 @@ void CheckForClose()
         }
       if(OrderType()==OP_SELL)
         {
-         if(ema5>ema15 && macd>0)
+         if(  ema5>ema15 || macd>0)
            {
             if(!OrderClose(OrderTicket(),0.1,Ask,5,White))
                Print("OrderClose error ",GetLastError());
